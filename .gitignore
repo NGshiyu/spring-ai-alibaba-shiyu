@@ -28,6 +28,7 @@ target/
 
 ### .env files contain local environment variables ###
 .env
+spring-boot-starters/spring-ai-alibaba-higress/.envrc
 
 # Maven ignore
 .flattened-pom.xml

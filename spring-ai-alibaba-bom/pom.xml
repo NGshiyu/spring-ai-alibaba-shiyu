@@ -124,6 +124,13 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- pring AI Alibaba Higress-->
+            <dependency>
+                <groupId>com.alibaba.cloud.ai</groupId>
+                <artifactId>spring-ai-alibaba-higress</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
         </dependencies>
 
     </dependencyManagement>
