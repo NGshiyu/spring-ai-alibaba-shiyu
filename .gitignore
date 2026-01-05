@@ -27,7 +27,9 @@ target/
 .DS_Store
 
 ### .env files contain local environment variables ###
+#rc## .env files contain local environment variables ###
 .env
+.envrc
 
 # Maven ignore
 .flattened-pom.xml

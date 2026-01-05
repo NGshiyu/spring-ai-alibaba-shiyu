@@ -23,37 +23,59 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
+/**
+ * Represents an asynchronous node action that operates on an agent state with configuration and returns state updates.
+ *
+ */
 public interface AsyncNodeActionWithConfig
-		extends BiFunction<OverAllState, RunnableConfig, CompletableFuture<Map<String, Object>>> {
+        extends BiFunction<OverAllState, RunnableConfig, CompletableFuture<Map<String, Object>>>, ActionLifecycle<Exception> {
 
-	/**
-	 * Applies this action to the given agent state.
-	 * @param state the agent state
-	 * @return a CompletableFuture representing the result of the action
-	 */
-	CompletableFuture<Map<String, Object>> apply(OverAllState state, RunnableConfig config);
+    /**
+     * Applies this action to the given agent state and configuration.
+     *
+     * @param state  the agent state
+     * @param config the runnable configuration
+     *
+     * @return a CompletableFuture representing the result of the action
+     */
+    CompletableFuture<Map<String, Object>> apply(OverAllState state, RunnableConfig config);
 
-	static AsyncNodeActionWithConfig node_async(NodeActionWithConfig syncAction) {
-		return (state, config) -> {
-			Context context = Context.current();
-			CompletableFuture<Map<String, Object>> result = new CompletableFuture<>();
-			try {
-				result.complete(syncAction.apply(state, config));
-			}
-			catch (Exception e) {
-				result.completeExceptionally(e);
-			}
-			return result;
-		};
-	}
+    /**
+     * execute the action with pre- and post-operations
+     *
+     * @param state  the agent state
+     * @param config the runnable configuration
+     *
+     * @return a CompletableFuture representing the result of the action
+     */
+    default CompletableFuture<Map<String, Object>> execute(OverAllState state, RunnableConfig config) {
+        preHandler();
+        return apply(state, config)
+                .whenComplete((result, throwable) -> postHandler());
+    }
 
-	/**
-	 * Adapts a simple AsyncNodeAction to an AsyncNodeActionWithConfig.
-	 * @param action the simple AsyncNodeAction to be adapted
-	 * @return an AsyncNodeActionWithConfig that wraps the given AsyncNodeAction
-	 */
-	static AsyncNodeActionWithConfig of(AsyncNodeAction action) {
-		return (t, config) -> action.apply(t);
-	}
+    static AsyncNodeActionWithConfig node_async(NodeActionWithConfig syncAction) {
+        return (state, config) -> {
+            Context context = Context.current();
+            CompletableFuture<Map<String, Object>> result = new CompletableFuture<>();
+            try {
+                result.complete(syncAction.execute(state, config));
+            } catch (Exception e) {
+                result.completeExceptionally(e);
+            }
+            return result;
+        };
+    }
+
+    /**
+     * Adapts a simple AsyncNodeAction to an AsyncNodeActionWithConfig.
+     *
+     * @param action the simple AsyncNodeAction to be adapted
+     *
+     * @return an AsyncNodeActionWithConfig that wraps the given AsyncNodeAction
+     */
+    static AsyncNodeActionWithConfig of(AsyncNodeAction action) {
+        return (t, config) -> action.execute(t);
+    }
 
 }

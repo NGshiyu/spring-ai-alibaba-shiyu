@@ -20,9 +20,35 @@ import com.alibaba.cloud.ai.graph.RunnableConfig;
 
 import java.util.Map;
 
+/**
+ * Represents a node action that operates on an agent state with configuration and returns state updates.
+ *
+ */
 @FunctionalInterface
-public interface NodeActionWithConfig {
+public interface NodeActionWithConfig extends ActionLifecycle<Exception> {
 
+	/**
+	 * Applies this action to the given agent state and configuration.
+	 * @param state the agent state
+	 * @param config the runnable configuration
+	 * @return state updates as a map
+	 * @throws Exception if an error occurs during the action
+	 */
 	Map<String, Object> apply(OverAllState state, RunnableConfig config) throws Exception;
 
+	/**
+	 * execute the action with pre- and post-operations
+	 * @param state the agent state
+	 * @param config the runnable configuration
+	 * @return state updates as a map
+	 * @throws Exception if an error occurs during the action
+	 */
+	default Map<String, Object> execute(OverAllState state, RunnableConfig config) throws Exception {
+		try {
+			preHandler();
+			return apply(state, config);
+		}  finally {
+			postHandler();
+		}
+	}
 }

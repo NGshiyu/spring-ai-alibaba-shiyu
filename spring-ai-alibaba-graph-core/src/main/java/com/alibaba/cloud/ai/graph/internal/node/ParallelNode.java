@@ -215,7 +215,7 @@ public class ParallelNode extends Node {
 			LifeListenerUtil.processListenersLIFO(actualNodeId,
 					new LinkedBlockingDeque<>(compileConfig.lifecycleListeners()), state.data(), config, NODE_BEFORE,
 					null);
-			return action.apply(state, config)
+			return action.execute(state, config)
 					.whenComplete((stringObjectMap, throwable) -> LifeListenerUtil.processListenersLIFO(actualNodeId,
 							new LinkedBlockingDeque<>(compileConfig.lifecycleListeners()), state.data(), config,
 							NODE_AFTER,

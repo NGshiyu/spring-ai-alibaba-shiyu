@@ -22,24 +22,52 @@ import io.opentelemetry.context.Context;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
-public interface AsyncCommandAction extends BiFunction<OverAllState, RunnableConfig, CompletableFuture<Command>> {
+/**
+ * Represents an asynchronous command action that operates on an agent state with configuration and returns a command.
+ *
+ */
+public interface AsyncCommandAction extends BiFunction<OverAllState, RunnableConfig, CompletableFuture<Command>>, ActionLifecycle<Exception> {
 
-	static AsyncCommandAction node_async(CommandAction syncAction) {
-		return (state, config) -> {
-			Context context = Context.current();
-			var result = new CompletableFuture<Command>();
-			try {
-				result.complete(syncAction.apply(state, config));
-			}
-			catch (Exception e) {
-				result.completeExceptionally(e);
-			}
-			return result;
-		};
-	}
+    /**
+     * Applies this action to the given agent state and configuration.
+     *
+     * @param state  the agent state
+     * @param config the runnable configuration
+     *
+     * @return a CompletableFuture representing the command result
+     */
+    CompletableFuture<Command> apply(OverAllState state, RunnableConfig config);
 
-	static AsyncCommandAction of(AsyncEdgeAction action) {
-		return (state, config) -> action.apply(state).thenApply(Command::new);
-	}
+    /**
+     * execute the action with pre- and post-operations
+     *
+     * @param state  the agent state
+     * @param config the runnable configuration
+     *
+     * @return a CompletableFuture representing the command result
+     */
+    default CompletableFuture<Command> execute(OverAllState state, RunnableConfig config) {
+        preHandler();
+        return apply(state, config)
+                .whenComplete((command, throwable) -> postHandler());
+
+    }
+
+    static AsyncCommandAction node_async(CommandAction syncAction) {
+        return (state, config) -> {
+            Context context = Context.current();
+            var result = new CompletableFuture<Command>();
+            try {
+                result.complete(syncAction.execute(state, config));
+            } catch (Exception e) {
+                result.completeExceptionally(e);
+            }
+            return result;
+        };
+    }
+
+    static AsyncCommandAction of(AsyncEdgeAction action) {
+        return (state, config) -> action.execute(state).thenApply(Command::new);
+    }
 
 }

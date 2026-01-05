@@ -22,14 +22,35 @@ import com.alibaba.cloud.ai.graph.OverAllState;
  *
  */
 @FunctionalInterface
-public interface EdgeAction {
+public interface EdgeAction extends ActionLifecycle<Exception> {
 
-	/**
-	 * Applies this action to the given agent state.
-	 * @param state the agent state
-	 * @return a result of the action
-	 * @throws Exception if an error occurs during the action
-	 */
-	String apply(OverAllState state) throws Exception;
+    /**
+     * Applies this action to the given agent state.
+     *
+     * @param state the agent state
+     *
+     * @return a result of the action
+     *
+     * @throws Exception if an error occurs during the action
+     */
+    String apply(OverAllState state) throws Exception;
+
+    /**
+     * execute the action with pre- and post-operations
+     *
+     * @param state the agent state
+     *
+     * @return a result of the action
+     *
+     * @throws Exception if an error occurs during the action
+     */
+    default String execute(OverAllState state) throws Exception {
+        try {
+            preHandler();
+            return apply(state);
+        } finally {
+            postHandler();
+        }
+    }
 
 }

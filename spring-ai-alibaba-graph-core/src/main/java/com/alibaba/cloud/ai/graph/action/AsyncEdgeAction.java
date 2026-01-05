@@ -27,32 +27,48 @@ import java.util.function.Function;
  *
  */
 @FunctionalInterface
-public interface AsyncEdgeAction extends Function<OverAllState, CompletableFuture<String>> {
+public interface AsyncEdgeAction extends Function<OverAllState, CompletableFuture<String>>, ActionLifecycle<Exception> {
 
-	/**
-	 * Applies this action to the given agent state.
-	 * @param state the agent state
-	 * @return a CompletableFuture representing the result of the action
-	 */
-	CompletableFuture<String> apply(OverAllState state);
+    /**
+     * Applies this action to the given agent state.
+     *
+     * @param state the agent state
+     *
+     * @return a CompletableFuture representing the result of the action
+     */
+    CompletableFuture<String> apply(OverAllState state);
 
-	/**
-	 * Creates an asynchronous edge action from a synchronous edge action.
-	 * @param syncAction the synchronous edge action
-	 * @return an asynchronous edge action
-	 */
-	static AsyncEdgeAction edge_async(EdgeAction syncAction) {
-		return state -> {
-			Context context = Context.current();
-			CompletableFuture<String> result = new CompletableFuture<>();
-			try {
-				result.complete(syncAction.apply(state));
-			}
-			catch (Exception e) {
-				result.completeExceptionally(e);
-			}
-			return result;
-		};
-	}
+    /**
+     * execute the action with pre- and post-operations
+     *
+     * @param state the agent state
+     *
+     * @return a CompletableFuture representing the result of the action
+     */
+    default CompletableFuture<String> execute(OverAllState state) {
+        preHandler();
+        return apply(state)
+                .whenComplete((result, throwable) -> postHandler());
+    }
+
+    /**
+     * Creates an asynchronous edge action from a synchronous edge action.
+     *
+     * @param syncAction the synchronous edge action
+     *
+     * @return an asynchronous edge action
+     */
+    static AsyncEdgeAction edge_async(EdgeAction syncAction) {
+        return state -> {
+            Context context = Context.current();
+            CompletableFuture<String> result = new CompletableFuture<>();
+            try {
+                result.complete(syncAction.execute(state));
+            } catch (Exception e) {
+                result.completeExceptionally(e);
+            }
+            return result;
+        };
+    }
 
 }

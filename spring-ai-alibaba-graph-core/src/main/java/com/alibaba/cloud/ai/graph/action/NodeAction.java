@@ -19,9 +19,40 @@ import com.alibaba.cloud.ai.graph.OverAllState;
 
 import java.util.Map;
 
+/**
+ * Represents a node action that operates on an agent state and returns state updates.
+ *
+ */
 @FunctionalInterface
-public interface NodeAction {
+public interface NodeAction extends ActionLifecycle<Exception> {
 
-	Map<String, Object> apply(OverAllState state) throws Exception;
+    /**
+     * Applies this action to the given agent state.
+     *
+     * @param state the agent state
+     *
+     * @return state updates as a map
+     *
+     * @throws Exception if an error occurs during the action
+     */
+    Map<String, Object> apply(OverAllState state) throws Exception;
+
+    /**
+     * execute the action with pre- and post-operations
+     *
+     * @param state the agent state
+     *
+     * @return state updates as a map
+     *
+     * @throws Exception if an error occurs during the action
+     */
+    default Map<String, Object> execute(OverAllState state) throws Exception {
+        try {
+            preHandler();
+            return apply(state);
+        } finally {
+            postHandler();
+        }
+    }
 
 }

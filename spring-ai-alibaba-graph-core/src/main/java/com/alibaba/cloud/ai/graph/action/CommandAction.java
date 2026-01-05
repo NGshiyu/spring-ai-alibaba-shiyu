@@ -18,9 +18,42 @@ package com.alibaba.cloud.ai.graph.action;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.RunnableConfig;
 
+/**
+ * Represents a command action that operates on an agent state and returns a command.
+ *
+ */
 @FunctionalInterface
-public interface CommandAction {
+public interface CommandAction extends ActionLifecycle<Exception> {
 
-	Command apply(OverAllState state, RunnableConfig config) throws Exception;
+    /**
+     * Applies this action to the given agent state and configuration.
+     *
+     * @param state  the agent state
+     * @param config the runnable configuration
+     *
+     * @return a command to be executed
+     *
+     * @throws Exception if an error occurs during the action
+     */
+    Command apply(OverAllState state, RunnableConfig config) throws Exception;
+
+    /**
+     * execute the action with pre- and post-operations
+     *
+     * @param state  the agent state
+     * @param config the runnable configuration
+     *
+     * @return a command to be executed
+     *
+     * @throws Exception if an error occurs during the action
+     */
+    default Command execute(OverAllState state, RunnableConfig config) throws Exception {
+        try {
+            preHandler();
+            return apply(state, config);
+        } finally {
+            postHandler();
+        }
+    }
 
 }

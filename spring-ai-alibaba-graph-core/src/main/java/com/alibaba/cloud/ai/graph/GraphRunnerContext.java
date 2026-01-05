@@ -207,7 +207,7 @@ public class GraphRunnerContext {
 			return new Command(route.id(), state);
 		}
 		if (route.value() != null) {
-			var command = route.value().action().apply(this.overallState, config).get();
+			var command = route.value().action().execute(this.overallState, config).get();
 			var newRoute = command.gotoNode();
 			String result = route.value().mappings().get(newRoute);
 			if (result == null) {
