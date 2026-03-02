@@ -70,3 +70,6 @@ modified_mcp_config.json
 **/spans.json
 
 .checkstyle
+
+# CLI Config
+.claude

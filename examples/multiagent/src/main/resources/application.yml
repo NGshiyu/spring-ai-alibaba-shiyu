@@ -1,0 +1,38 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: multiagent
+  ai:
+    # DashScope ?????????
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY:your-api-key}
+      chat:
+        options:
+          model: ${DASHSCOPE_MODEL:qwen-plus}
+    mcp: # 结合Spring AI使用MCP的必须配置
+      client: # 注入Spring AI MCP Client
+        enabled: true
+        name: saa-mcp-client
+        toolcallback:
+          enabled: true
+        type: async
+        streamable-http: # 定义streamableHttp的MCP工具
+          connections:
+            amap-maps:
+              url: ${MODEL_SCOPE_AMAP_BASE_URL} # 从魔搭社区获取调用url，移除尾部endpoint,例如: https://mcp.api-inference.modelscope.net/?????????/
+              endpoint: mcp
+        sse: # 定义基于sse的MCP工具
+          connections:
+            12306-mcp:
+              url: ${MODEL_SCOPE_12306_BASE_URL}  # 从魔搭社区获取调用url，移除尾部endpoint,例如: https://mcp.api-inference.modelscope.net/?????????/
+              sse-endpoint: sse
+
+
+# ????
+logging:
+  level:
+    root: INFO
+    com.alibaba.cloud.ai: DEBUG
+    org.springframework.ai: DEBUG
