@@ -5,7 +5,7 @@ spring:
   application:
     name: multiagent
   ai:
-    # DashScope ?????????
+    # DashScope 配置（阿里云百炼）
     dashscope:
       api-key: ${DASHSCOPE_API_KEY:your-api-key}
       chat:
@@ -23,11 +23,9 @@ spring:
             amap-maps:
               url: ${MODEL_SCOPE_AMAP_BASE_URL} # 从魔搭社区获取调用url，移除尾部endpoint,例如: https://mcp.api-inference.modelscope.net/?????????/
               endpoint: mcp
-        sse: # 定义基于sse的MCP工具
-          connections:
-            12306-mcp:
-              url: ${MODEL_SCOPE_12306_BASE_URL}  # 从魔搭社区获取调用url，移除尾部endpoint,例如: https://mcp.api-inference.modelscope.net/?????????/
-              sse-endpoint: sse
+            mcd_mcp_server:
+              url: ${MODEL_SCOPE_MCD_BASE_URL} # 从魔搭社区获取调用url，移除尾部endpoint,例如: https://mcp.api-inference.modelscope.net/?????????/
+              endpoint: mcp
 
 
 # ????

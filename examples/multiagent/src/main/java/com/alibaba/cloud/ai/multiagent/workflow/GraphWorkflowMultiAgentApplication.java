@@ -17,6 +17,7 @@ package com.alibaba.cloud.ai.multiagent.workflow;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 /**
  * 定制化工作流示例项目
@@ -24,6 +25,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author NGshiyu
  */
 @SpringBootApplication
+@EnableConfigurationProperties
 public class GraphWorkflowMultiAgentApplication {
     public static void main(String[] args) {
         SpringApplication.run(GraphWorkflowMultiAgentApplication.class, args);

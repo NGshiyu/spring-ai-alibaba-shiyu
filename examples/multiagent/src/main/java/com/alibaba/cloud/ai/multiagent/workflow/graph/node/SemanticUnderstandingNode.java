@@ -18,11 +18,18 @@
 package com.alibaba.cloud.ai.multiagent.workflow.graph.node;
 
 import com.alibaba.cloud.ai.graph.OverAllState;
+import com.alibaba.cloud.ai.graph.RunnableConfig;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
-import com.alibaba.cloud.ai.multiagent.workflow.graph.utils.ChatModelUtils;
+import com.alibaba.cloud.ai.graph.agent.Builder;
+import com.alibaba.cloud.ai.graph.agent.ReactAgent;
+import com.alibaba.cloud.ai.graph.checkpoint.savers.MemorySaver;
+import com.alibaba.cloud.ai.multiagent.workflow.graph.TravelGuideGraphConfig;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.tool.ToolCallbackProvider;
 
 import java.util.Map;
 
@@ -31,15 +38,57 @@ import java.util.Map;
  *
  * @author NGshiyu
  */
-public record SemanticUnderstandingNode() implements NodeAction {
+public record SemanticUnderstandingNode(ChatModel chatModel, ToolCallbackProvider toolCallbackProvider,
+                                        org.springframework.ai.mcp.client.common.autoconfigure.properties.McpClientCommonProperties mcpClientCommonProperties) implements NodeAction {
     private static final Logger logger = LoggerFactory.getLogger(SemanticUnderstandingNode.class);
+    private final static String instruction = """
+                你是一个语义理解工具，负责将用户输入转化为更利于大模型理解的表达，须严格遵守仅输出优化后的单句内容、绝不曲解原意且在保持核心意图不变的前提下尽可能完善细节。
+                """;
+
 
     @Override
     public Map<String, Object> apply(OverAllState state) throws Exception {
-        ChatModel chatModel = ChatModelUtils.getChatModel();
-
-
         logger.info("SemanticUnderstandingNode execute");
-        return Map.of();
+        //GenerateOptions 支持
+        //Ollama 也支持 GenerateOptions 进行标准配置：
+
+        //GenerateOptions options = GenerateOptions.builder()
+        //        .temperature(0.7)           // 映射到 Ollama 的 temperature
+        //        .topP(0.9)                  // 映射到 Ollama 的 top_p
+        //        .topK(40)                   // 映射到 Ollama 的 top_k
+        //        .maxTokens(2000)            // 映射到 Ollama 的 num_predict
+        //        .seed(42L)                  // 映射到 Ollama 的 seed
+        //        .frequencyPenalty(0.5)      // 映射到 Ollama 的 frequency_penalty
+        //        .presencePenalty(0.5)       // 映射到 Ollama 的 presence_penalty
+        //        .additionalBodyParam(OllamaOptions.ParamKey.NUM_CTX.getKey(), 4096)      // 上下文窗口大小
+        //        .additionalBodyParam(OllamaOptions.ParamKey.NUM_GPU.getKey(), -1)        // 将所有层卸载到 GPU
+        //        .additionalBodyParam(OllamaOptions.ParamKey.REPEAT_PENALTY.getKey(), 1.1) // 重复惩罚
+        //        .additionalBodyParam(OllamaOptions.ParamKey.MAIN_GPU.getKey(), 0)        // 主 GPU 索引
+        //        .additionalBodyParam(OllamaOptions.ParamKey.LOW_VRAM.getKey(), false)    // 低显存模式
+        //        .additionalBodyParam(OllamaOptions.ParamKey.F16_KV.getKey(), true)       // 16位 KV 缓存
+        //        .additionalBodyParam(OllamaOptions.ParamKey.NUM_THREAD.getKey(), 8)      // CPU 线程数
+        //        .build();
+
+        //Run React Agent With MCP Tools
+        Builder builder = ReactAgent.builder()
+                .name("semantic_understanding_assistant")
+                .model(chatModel)
+                .description("Understand the user's input content and output one sentence")
+                .instruction(instruction)
+                .saver((MemorySaver)state.value("memorySaver").get());
+        //if (toolCallbackProvider != null) {
+        //    builder.toolCallbackProviders(toolCallbackProvider);
+        //}
+        //else {
+        //    builder.tools(toolCallback);
+        //}
+        ReactAgent agent = builder.build();
+        var config = RunnableConfig.builder()
+                .threadId(state.value("sessionId").toString())
+                .build();
+        //stream
+        AssistantMessage question = agent.call(state.value("question").toString(), config);
+        return Map.of(TravelGuideGraphConfig.SEMANTIC_ANSWER, StringUtils.isNotBlank(question.getText()) ? question.getText() : state.value("question").toString());
+        //return Map.of(TravelGuideGraphConfig.SEMANTIC_ANSWER, Flux.fromIterable(List.of(StringUtils.isNotBlank(question.getText()) ? question.getText() : state.value("question").toString())));
     }
 }

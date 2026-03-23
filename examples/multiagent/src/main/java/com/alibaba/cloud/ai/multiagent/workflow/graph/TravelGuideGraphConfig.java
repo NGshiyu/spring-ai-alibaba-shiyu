@@ -22,12 +22,14 @@ import com.alibaba.cloud.ai.graph.checkpoint.config.SaverConfig;
 import com.alibaba.cloud.ai.graph.checkpoint.savers.MemorySaver;
 import com.alibaba.cloud.ai.graph.exception.GraphStateException;
 import com.alibaba.cloud.ai.graph.state.strategy.ReplaceStrategy;
-import com.alibaba.cloud.ai.multiagent.workflow.graph.node.MaterialProcurementNode;
 import com.alibaba.cloud.ai.multiagent.workflow.graph.node.PlanGenerationNode;
 import com.alibaba.cloud.ai.multiagent.workflow.graph.node.RoutePlanningNode;
 import com.alibaba.cloud.ai.multiagent.workflow.graph.node.SemanticUnderstandingNode;
+import com.alibaba.cloud.ai.multiagent.workflow.graph.node.WeatherSearchNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.mcp.client.common.autoconfigure.properties.McpClientCommonProperties;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -48,22 +50,28 @@ public class TravelGuideGraphConfig {
     private static final Logger logger = LoggerFactory.getLogger(TravelGuideGraphConfig.class);
     @Autowired
     private ToolCallbackProvider toolCallbackProvider;
-
-    public static final String SEMANTIC_ANSWER = "semantic_answer";
-    public static final String ROUTE_ANSWER = "route_answer";
-    public static final String MATERIAL_ANSWER = "material_answer";
+    @Autowired
+    ChatModel chatModel;
+    @Autowired
+    McpClientCommonProperties mcpClientCommonProperties;
+    public static final String SEMANTIC_ANSWER = "semantic_understanding_answer";
+    public static final String ROUTE_ANSWER = "route_planning_answer";
+    public static final String PROCUREMENT_ANSWER = "mcdonald_procurement_answer";
+    public static final String WEATHER_ANSWER = "weather_search_answer";
+    public static final String GENERATION_ANSWER = "plan_generation_answer";
 
     KeyStrategyFactory keyStrategyFactory = () -> {
         HashMap<String, KeyStrategy> keyStrategyHashMap = new HashMap<>();
         keyStrategyHashMap.put(SEMANTIC_ANSWER, new ReplaceStrategy());
         keyStrategyHashMap.put(ROUTE_ANSWER, new ReplaceStrategy());
-        keyStrategyHashMap.put(MATERIAL_ANSWER, new ReplaceStrategy());
-
+        //keyStrategyHashMap.put(PROCUREMENT_ANSWER, new ReplaceStrategy());
+        keyStrategyHashMap.put(WEATHER_ANSWER, new ReplaceStrategy());
+        keyStrategyHashMap.put(GENERATION_ANSWER, new ReplaceStrategy());
         return keyStrategyHashMap;
     };
 
     /**
-     * 生成式问答的子graph
+     * 定义一个执行流程
      *
      * @return {@link StateGraph } 返回一个流程信息
      */
@@ -96,19 +104,24 @@ public class TravelGuideGraphConfig {
             //        .addEdge("plan_element", "plan_generation")
             //        .addEdge("plan_generation", StateGraph.END);
 
+
             StateGraph stateGraph = new StateGraph(keyStrategyFactory)
                     //节点添加
-                    .addNode("semantic_understanding", node_async(new SemanticUnderstandingNode())) // 语义理解节点
-                    .addNode("route_planning", node_async(new RoutePlanningNode(toolCallbackProvider))) // 路线规划节点
-                    .addNode("material_procurement", node_async(new MaterialProcurementNode(toolCallbackProvider))) // 物资采购节点
-                    .addNode("plan_generation", node_async(new PlanGenerationNode())); // 方案生成节点 // 方案生成节点
+                    .addNode("semantic_understanding", node_async(new SemanticUnderstandingNode(chatModel, toolCallbackProvider, mcpClientCommonProperties))) // 语义理解节点
+                    .addNode("route_planning", new RoutePlanningNode(chatModel, toolCallbackProvider, mcpClientCommonProperties)) // 路线规划节点
+                    .addNode("weather_search", new WeatherSearchNode(chatModel, toolCallbackProvider, mcpClientCommonProperties)) // 路线规划节点
+                    //.addNode("mcdonald_procurement", new McDonaldProcurementNode(chatModel, toolCallbackProvider, mcpClientCommonProperties)) // 物资采购节点
+                    .addNode("plan_generation", node_async(new PlanGenerationNode(chatModel))); // 方案生成节点 // 方案生成节点
 
             //定义一个流转的边界路线图
             stateGraph.addEdge(StateGraph.START, "semantic_understanding")
                     .addEdge("semantic_understanding", "route_planning")
-                    .addEdge("semantic_understanding", "material_procurement")
+                    .addEdge("semantic_understanding", "weather_search")
+                    //.addEdge("route_planning", "mcdonald_procurement")
+                    //.addEdge("weather_search", "mcdonald_procurement")
+                    //.addEdge("mcdonald_procurement", "plan_generation")
                     .addEdge("route_planning", "plan_generation")
-                    .addEdge("material_procurement", "plan_generation")
+                    .addEdge("weather_search", "plan_generation")
                     .addEdge("plan_generation", StateGraph.END);
 
             // 配置持久化
