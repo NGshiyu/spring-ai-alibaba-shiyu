@@ -22,7 +22,6 @@ import com.alibaba.cloud.ai.graph.checkpoint.config.SaverConfig;
 import com.alibaba.cloud.ai.graph.checkpoint.savers.MemorySaver;
 import com.alibaba.cloud.ai.graph.exception.GraphStateException;
 import com.alibaba.cloud.ai.graph.state.strategy.ReplaceStrategy;
-import com.alibaba.cloud.ai.multiagent.workflow.graph.node.PlanGenerationNode;
 import com.alibaba.cloud.ai.multiagent.workflow.graph.node.RoutePlanningNode;
 import com.alibaba.cloud.ai.multiagent.workflow.graph.node.SemanticUnderstandingNode;
 import com.alibaba.cloud.ai.multiagent.workflow.graph.node.WeatherSearchNode;
@@ -88,41 +87,44 @@ public class TravelGuideGraphConfig {
             //compileConfig – 包含生命周期监听器及其他编译时设置的编译配置，这些设置会影响并行节点的执行方式。
             //ParallelNode planElement = new ParallelNode("plan_element", "plan_generation",
             //        List.of(
-            //                AsyncNodeActionWithConfig.of(node_async(new RoutePlanningNode())),
-            //                AsyncNodeActionWithConfig.of(node_async(new MaterialProcurementNode()))
+            //                AsyncNodeActionWithConfig.of(new RoutePlanningNode(toolCallbackProvider, mcpClientCommonProperties)),
+            //                AsyncNodeActionWithConfig.of(new WeatherSearchNode(toolCallbackProvider, mcpClientCommonProperties))
             //        ), List.of("route_planning", "material_procurement"), keyStrategyFactory.apply(), CompileConfig.builder().build());
             //
             //StateGraph stateGraph = new StateGraph(keyStrategyFactory)
             //        //节点添加
-            //        .addNode("semantic_understanding", node_async(new SemanticUnderstandingNode()))
-            //        .addNode("plan_element", planElement)
+            //        .addNode("semantic_understanding", node_async(new SemanticUnderstandingNode(toolCallbackProvider, mcpClientCommonProperties)))
+            //        .addNode(planElement.id(), planElement)
             //        .addNode("plan_generation", node_async(new PlanGenerationNode()));
             //
             ////定义一个流转的边界路线图
             //stateGraph.addEdge(StateGraph.START, "semantic_understanding")
             //        .addEdge("semantic_understanding", "plan_element")
-            //        .addEdge("plan_element", "plan_generation")
+            //        .addEdge(planElement.id(), "plan_generation")
             //        .addEdge("plan_generation", StateGraph.END);
 
 
             StateGraph stateGraph = new StateGraph(keyStrategyFactory)
                     //节点添加
-                    .addNode("semantic_understanding", node_async(new SemanticUnderstandingNode(chatModel, toolCallbackProvider, mcpClientCommonProperties))) // 语义理解节点
-                    .addNode("route_planning", new RoutePlanningNode(chatModel, toolCallbackProvider, mcpClientCommonProperties)) // 路线规划节点
-                    .addNode("weather_search", new WeatherSearchNode(chatModel, toolCallbackProvider, mcpClientCommonProperties)) // 路线规划节点
+                    .addNode("semantic_understanding", node_async(new SemanticUnderstandingNode(toolCallbackProvider, mcpClientCommonProperties))) // 语义理解节点
+                    .addNode("route_planning", new RoutePlanningNode(toolCallbackProvider, mcpClientCommonProperties)) // 路线规划节点
+                    .addNode("weather_search", new WeatherSearchNode(toolCallbackProvider, mcpClientCommonProperties)) // 天气查询节点
                     //.addNode("mcdonald_procurement", new McDonaldProcurementNode(chatModel, toolCallbackProvider, mcpClientCommonProperties)) // 物资采购节点
-                    .addNode("plan_generation", node_async(new PlanGenerationNode(chatModel))); // 方案生成节点 // 方案生成节点
+                    //.addNode("plan_generation", node_async(new PlanGenerationNode()))
+                    ; // 方案生成节点 // 方案生成节点
 
             //定义一个流转的边界路线图
             stateGraph.addEdge(StateGraph.START, "semantic_understanding")
-                    .addEdge("semantic_understanding", "route_planning")
+                    //.addEdge("semantic_understanding", "route_planning")
                     .addEdge("semantic_understanding", "weather_search")
                     //.addEdge("route_planning", "mcdonald_procurement")
                     //.addEdge("weather_search", "mcdonald_procurement")
                     //.addEdge("mcdonald_procurement", "plan_generation")
-                    .addEdge("route_planning", "plan_generation")
-                    .addEdge("weather_search", "plan_generation")
-                    .addEdge("plan_generation", StateGraph.END);
+                    //.addEdge("route_planning", "plan_generation")
+                    //.addEdge("weather_search", "plan_generation")
+                    //.addEdge("plan_generation", StateGraph.END);
+                    //.addEdge("route_planning", StateGraph.END)
+                    .addEdge("weather_search", StateGraph.END);
 
             // 配置持久化
             var memory = new MemorySaver();

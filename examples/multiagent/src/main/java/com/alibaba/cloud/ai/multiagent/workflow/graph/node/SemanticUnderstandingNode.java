@@ -17,6 +17,9 @@
 
 package com.alibaba.cloud.ai.multiagent.workflow.graph.node;
 
+import com.alibaba.cloud.ai.dashscope.api.DashScopeApi;
+import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
+import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.RunnableConfig;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
@@ -38,17 +41,23 @@ import java.util.Map;
  *
  * @author NGshiyu
  */
-public record SemanticUnderstandingNode(ChatModel chatModel, ToolCallbackProvider toolCallbackProvider,
-                                        org.springframework.ai.mcp.client.common.autoconfigure.properties.McpClientCommonProperties mcpClientCommonProperties) implements NodeAction {
+public record SemanticUnderstandingNode(ToolCallbackProvider toolCallbackProvider,
+                                        org.springframework.ai.mcp.client.common.autoconfigure.properties.McpClientCommonProperties mcpClientCommonProperties)
+        implements NodeAction {
     private static final Logger logger = LoggerFactory.getLogger(SemanticUnderstandingNode.class);
     private final static String instruction = """
-                你是一个语义理解工具，负责将用户输入转化为更利于大模型理解的表达，须严格遵守仅输出优化后的单句内容、绝不曲解原意且在保持核心意图不变的前提下尽可能完善细节。
-                """;
+            你是一个语义理解工具，负责将用户输入转化为更利于大模型理解的表达，须严格遵守仅输出优化后的单句内容、绝不曲解原意且在保持核心意图不变的前提下尽可能完善细节。
+            """;
 
 
     @Override
     public Map<String, Object> apply(OverAllState state) throws Exception {
         logger.info("SemanticUnderstandingNode execute");
+        //二次调用则处理规避
+        if (Boolean.parseBoolean(state.value("isFeedback").toString())) {
+            return Map.of();
+        }
+
         //GenerateOptions 支持
         //Ollama 也支持 GenerateOptions 进行标准配置：
 
@@ -68,14 +77,25 @@ public record SemanticUnderstandingNode(ChatModel chatModel, ToolCallbackProvide
         //        .additionalBodyParam(OllamaOptions.ParamKey.F16_KV.getKey(), true)       // 16位 KV 缓存
         //        .additionalBodyParam(OllamaOptions.ParamKey.NUM_THREAD.getKey(), 8)      // CPU 线程数
         //        .build();
-
         //Run React Agent With MCP Tools
+        // 创建 DashScope API 实例
+        DashScopeApi dashScopeApi = DashScopeApi.builder()
+                .apiKey(System.getenv("AI_DASHSCOPE_API_KEY"))
+                .build();
+        // 创建 ChatModel
+        ChatModel chatModel = DashScopeChatModel.builder()
+                .dashScopeApi(dashScopeApi)
+                .defaultOptions(DashScopeChatOptions.builder()
+                        .model("qwen-plus")
+                        .maxToken(200)           // 核采样参数
+                        .build())
+                .build();
         Builder builder = ReactAgent.builder()
                 .name("semantic_understanding_assistant")
                 .model(chatModel)
                 .description("Understand the user's input content and output one sentence")
                 .instruction(instruction)
-                .saver((MemorySaver)state.value("memorySaver").get());
+                .saver((MemorySaver) state.value("memorySaver").get());
         //if (toolCallbackProvider != null) {
         //    builder.toolCallbackProviders(toolCallbackProvider);
         //}
@@ -83,12 +103,14 @@ public record SemanticUnderstandingNode(ChatModel chatModel, ToolCallbackProvide
         //    builder.tools(toolCallback);
         //}
         ReactAgent agent = builder.build();
+        // 使用独立的 threadId 隔离消息历史，避免不同节点之间的消息污染
         var config = RunnableConfig.builder()
-                .threadId(state.value("sessionId").toString())
+                .threadId(state.value("sessionId").toString() + "_semantic")
                 .build();
         //stream
         AssistantMessage question = agent.call(state.value("question").toString(), config);
         return Map.of(TravelGuideGraphConfig.SEMANTIC_ANSWER, StringUtils.isNotBlank(question.getText()) ? question.getText() : state.value("question").toString());
-        //return Map.of(TravelGuideGraphConfig.SEMANTIC_ANSWER, Flux.fromIterable(List.of(StringUtils.isNotBlank(question.getText()) ? question.getText() : state.value("question").toString())));
+        //return Map.of(TravelGuideGraphConfig.SEMANTIC_ANSWER, Flux.fromIterable(List.of(StringUtils.isNotBlank(question.getText()) ? question.getText() : state.value
+        // ("question").toString())));
     }
 }

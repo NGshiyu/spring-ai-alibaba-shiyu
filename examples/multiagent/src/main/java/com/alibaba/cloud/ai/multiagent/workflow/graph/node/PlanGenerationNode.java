@@ -17,6 +17,9 @@
 
 package com.alibaba.cloud.ai.multiagent.workflow.graph.node;
 
+import com.alibaba.cloud.ai.dashscope.api.DashScopeApi;
+import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
+import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 import com.alibaba.cloud.ai.graph.NodeOutput;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.RunnableConfig;
@@ -37,7 +40,7 @@ import java.util.Map;
  *
  * @author NGshiyu
  */
-public record PlanGenerationNode(ChatModel chatModel) implements NodeAction {
+public record PlanGenerationNode() implements NodeAction {
     private static final Logger logger = LoggerFactory.getLogger(PlanGenerationNode.class);
     private final static String instruction = """
                  # Role: 资深项目规划与执行专家
@@ -83,7 +86,17 @@ public record PlanGenerationNode(ChatModel chatModel) implements NodeAction {
     @Override
     public Map<String, Object> apply(OverAllState state) throws Exception {
         logger.info("PlanGenerationNode execute");
-
+        DashScopeApi dashScopeApi = DashScopeApi.builder()
+                .apiKey(System.getenv("AI_DASHSCOPE_API_KEY"))
+                .build();
+        // 创建 ChatModel
+        ChatModel chatModel = DashScopeChatModel.builder()
+                .dashScopeApi(dashScopeApi)
+                .defaultOptions(DashScopeChatOptions.builder()
+                        .model("qwen-plus")
+                        .maxToken(200)           // 核采样参数
+                        .build())
+                .build();
         //Run React Agent With MCP Tools
         Builder builder = ReactAgent.builder()
                 .name("plan_generation_assistant")

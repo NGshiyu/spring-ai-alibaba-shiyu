@@ -19,6 +19,7 @@ package com.alibaba.cloud.ai.multiagent.workflow;
 
 import com.alibaba.cloud.ai.graph.CompiledGraph;
 import com.alibaba.cloud.ai.graph.RunnableConfig;
+import com.alibaba.cloud.ai.graph.action.InterruptionMetadata;
 import com.alibaba.cloud.ai.graph.checkpoint.savers.MemorySaver;
 import com.alibaba.cloud.ai.graph.exception.GraphStateException;
 import com.alibaba.cloud.ai.graph.streaming.StreamingOutput;
@@ -29,8 +30,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Sinks;
 
 import java.util.*;
 
@@ -50,7 +51,7 @@ public class GraphRunController {
 
 
     @PostMapping("/travelGuide")
-    public void runGraph() throws GraphStateException {
+    public void runGraph(@RequestParam("isFeedback") Boolean isFeedback) throws GraphStateException {
         //!!! 关键配置1：全局的sessionId
         String sessionId = "travel_guide" + UUID.randomUUID();
         //!!! 关键配置2： 全局的检查点保存器（工作流和Agent共享）
@@ -60,20 +61,21 @@ public class GraphRunController {
                 .threadId(sessionId)
                 .build();
 
-        Map<String, Object> initialState = Map.of(
-                "question", """
+        Map<String, Object> initialState = new HashMap<>();
+        initialState.put("question", """
                         我想要周六从上海浦东新区浦软大厦开车出发去杭州滨江安恒大厦开会，我可以走哪一条路线？
                         杭州当天天气怎么样，我需要穿什么衣服？
-                        """,
-                //"question", """
-                //        我想要周六从上海自驾出发去乌鲁木齐旅行，你有没有推荐的路线？我可以走哪一条路线？
-                //        我沿途会经过哪些城市，天气怎么样？
-                //        同时帮我查询一下沿途的麦当劳门店，我比较喜欢吃麦当劳""",
-                "sessionId", sessionId,
-                //!!! 定义一个全局的 ThreadId 和graph的智能体共享，以便于 HIL
-                "memorySaver", memorySaver,
-                "sink", Sinks.many().multicast().onBackpressureBuffer()
-        );
+                        """);
+        //"question", """
+        //        我想要周六从上海自驾出发去乌鲁木齐旅行，你有没有推荐的路线？我可以走哪一条路线？
+        //        我沿途会经过哪些城市，天气怎么样？
+        //        同时帮我查询一下沿途的麦当劳门店，我比较喜欢吃麦当劳""",
+        initialState.put("sessionId", sessionId);
+        //!!! 定义一个全局的 ThreadId 和graph的智能体共享，以便于 HIL
+        initialState.put("memorySaver", memorySaver);
+        initialState.put("isFeedback", isFeedback);
+        // 注意：不要将不可序列化的对象（如 Sinks、Thread 等）放入 initialState，
+        // 因为 graph 会尝试使用 Jackson 克隆状态，这些对象无法被序列化/反序列化
 
 
         // 用于收集各 agent 的流式输出内容（使用 LinkedHashMap 保持顺序）
@@ -108,11 +110,56 @@ public class GraphRunController {
         //        );
         //    });
         //}
-        Set<String> setStr = new HashSet<>();
 
+
+        Set<String> setStr = new HashSet<>();
+        //travelGuideGraph.stream(initialState, config)
+        //        .doOnNext(output -> {
+        //            setStr.add(output.node());
+        //            // 处理流式输出
+        //            if (output instanceof StreamingOutput<?> streamingOutput) {
+        //                // 流式输出块
+        //                String agent = streamingOutput.agent();
+        //                String chunk = streamingOutput.chunk();
+        //                if (chunk != null && !chunk.isEmpty()) {
+        //                    // 按顺序收集每个 agent 的所有 chunks
+        //                    agentOutputs.computeIfAbsent(agent, k -> new LinkedList<>()).add(chunk);
+        //                }
+        //            }
+        //            //else if (output instanceof InterruptionMetadata interruptionMetadata) {
+        //            //
+        //            //}
+        //            else {
+        //                // 普通节点输出
+        //                String nodeId = output.node();
+        //                Map<String, Object> state = output.state().data();
+        //                System.out.println(" 节点 '" + output.agent() + nodeId + "' 执行完成");
+        //                String answerKey = output.node() + "_answer";
+        //                if (state.containsKey(answerKey)) {
+        //                    agentOutputs.computeIfAbsent(output.node(),
+        //                            k -> new LinkedList<>()).add(state.get(answerKey).toString());
+        //                }
+        //            }
+        //        })
+        //        .doOnError(error -> {
+        //            System.err.println("流式输出错误: " + error.getMessage());
+        //        })
+        //        .blockLast(); // 阻塞等待流完成
+
+        // 打印各 agent 的完整输出
+        //System.out.println("\n========== Agent Set ==========");
+        //System.out.println(JSON.toJSONString(setStr));
+        //System.out.println("\n========== 各 Agent 流式输出内容 ==========");
+        //agentOutputs.forEach((agent, chunks) -> {
+        //    System.out.println("\n【Agent: " + agent + "】");
+        //    chunks.forEach(System.out::print);
+        //    System.out.println("\n------------------------------------------------------------");
+        //});
+        //System.out.println("\n流式输出完成");
         travelGuideGraph.stream(initialState, config)
                 .doOnNext(output -> {
-                    setStr.add(output.node());
+                    //setStr.add(output.node());
+                    //System.out.println(JSON.toJSONString(output));
                     // 处理流式输出
                     if (output instanceof StreamingOutput<?> streamingOutput) {
                         // 流式输出块
@@ -123,9 +170,9 @@ public class GraphRunController {
                             agentOutputs.computeIfAbsent(agent, k -> new LinkedList<>()).add(chunk);
                         }
                     }
-                    //else if (output instanceof InterruptionMetadata interruptionMetadata) {
-                    //
-                    //}
+                    else if (output instanceof InterruptionMetadata interruptionMetadata) {
+                        agentOutputs.computeIfAbsent(output.node(),k -> new LinkedList<>()).add(output.toString());
+                    }
                     else {
                         // 普通节点输出
                         String nodeId = output.node();
@@ -142,7 +189,6 @@ public class GraphRunController {
                     System.err.println("流式输出错误: " + error.getMessage());
                 })
                 .blockLast(); // 阻塞等待流完成
-
         // 打印各 agent 的完整输出
         System.out.println("\n========== Agent Set ==========");
         System.out.println(JSON.toJSONString(setStr));
@@ -152,6 +198,5 @@ public class GraphRunController {
             chunks.forEach(System.out::print);
             System.out.println("\n------------------------------------------------------------");
         });
-        System.out.println("\n流式输出完成");
     }
 }
