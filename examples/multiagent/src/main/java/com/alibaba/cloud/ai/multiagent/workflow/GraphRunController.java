@@ -151,7 +151,7 @@ public class GraphRunController {
         // 用于收集各 agent 的流式输出内容（使用 LinkedHashMap 保持顺序）
         Map<String, List<String>> agentOutputs = new LinkedHashMap<>();
         Set<String> setStr = new HashSet<>();
-        travelGuideGraph.stream(initialState, config)
+        travelGuideGraphOneNode.stream(initialState, config)
                 .doOnNext(output -> {
                     //setStr.add(output.node());
                     //System.out.println(JSON.toJSONString(output));
