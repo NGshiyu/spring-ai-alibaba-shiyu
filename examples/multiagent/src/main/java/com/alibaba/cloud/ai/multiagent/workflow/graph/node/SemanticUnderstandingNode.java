@@ -57,27 +57,6 @@ public record SemanticUnderstandingNode(ToolCallbackProvider toolCallbackProvide
         if (Boolean.parseBoolean(state.value("isFeedback").toString())) {
             return Map.of();
         }
-
-        //GenerateOptions 支持
-        //Ollama 也支持 GenerateOptions 进行标准配置：
-
-        //GenerateOptions options = GenerateOptions.builder()
-        //        .temperature(0.7)           // 映射到 Ollama 的 temperature
-        //        .topP(0.9)                  // 映射到 Ollama 的 top_p
-        //        .topK(40)                   // 映射到 Ollama 的 top_k
-        //        .maxTokens(2000)            // 映射到 Ollama 的 num_predict
-        //        .seed(42L)                  // 映射到 Ollama 的 seed
-        //        .frequencyPenalty(0.5)      // 映射到 Ollama 的 frequency_penalty
-        //        .presencePenalty(0.5)       // 映射到 Ollama 的 presence_penalty
-        //        .additionalBodyParam(OllamaOptions.ParamKey.NUM_CTX.getKey(), 4096)      // 上下文窗口大小
-        //        .additionalBodyParam(OllamaOptions.ParamKey.NUM_GPU.getKey(), -1)        // 将所有层卸载到 GPU
-        //        .additionalBodyParam(OllamaOptions.ParamKey.REPEAT_PENALTY.getKey(), 1.1) // 重复惩罚
-        //        .additionalBodyParam(OllamaOptions.ParamKey.MAIN_GPU.getKey(), 0)        // 主 GPU 索引
-        //        .additionalBodyParam(OllamaOptions.ParamKey.LOW_VRAM.getKey(), false)    // 低显存模式
-        //        .additionalBodyParam(OllamaOptions.ParamKey.F16_KV.getKey(), true)       // 16位 KV 缓存
-        //        .additionalBodyParam(OllamaOptions.ParamKey.NUM_THREAD.getKey(), 8)      // CPU 线程数
-        //        .build();
-        //Run React Agent With MCP Tools
         // 创建 DashScope API 实例
         DashScopeApi dashScopeApi = DashScopeApi.builder()
                 .apiKey(System.getenv("AI_DASHSCOPE_API_KEY"))
@@ -105,7 +84,7 @@ public record SemanticUnderstandingNode(ToolCallbackProvider toolCallbackProvide
         ReactAgent agent = builder.build();
         // 使用独立的 threadId 隔离消息历史，避免不同节点之间的消息污染
         var config = RunnableConfig.builder()
-                .threadId(state.value("sessionId").toString() + "_semantic")
+                .threadId(state.value("sessionId") + "_semantic")
                 .build();
         //stream
         AssistantMessage question = agent.call(state.value("question").toString(), config);

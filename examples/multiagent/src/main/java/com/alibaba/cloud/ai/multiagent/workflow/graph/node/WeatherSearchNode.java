@@ -160,64 +160,11 @@ implements AsyncNodeAction,
     public Optional<InterruptionMetadata> interruptAfter(String nodeId, OverAllState state, Map<String, Object> actionResult, RunnableConfig config) {
         Optional<NodeOutput> nodeOutput = (Optional<NodeOutput>) actionResult.get(TravelGuideGraphConfig.WEATHER_ANSWER);
         if (nodeOutput.isPresent() && nodeOutput.get() instanceof InterruptionMetadata interruptionMetadata) {
-            System.out.println("检测到中断，需要人工审批");
-            List<InterruptionMetadata.ToolFeedback> toolFeedbacks =
-                    interruptionMetadata.toolFeedbacks();
-            for (InterruptionMetadata.ToolFeedback feedback : toolFeedbacks) {
-                System.out.println("工具: " + feedback.getName());
-                System.out.println("参数: " + feedback.getArguments());
-                System.out.println("描述: " + feedback.getDescription());
-            }
-            //Optional.of(InterruptionMetadata.builder(nodeId, state)
-            //        .addMetadata("reason", "interrupted_after_execution")
-            //        .addMetadata("action_result", actionResult)
-            //        .build());
-            //NGshiyu TODO: 直接返回前端，终止本次执行
-            return Optional.of(InterruptionMetadata.builder().nodeId(nodeId).toolFeedbacks(interruptionMetadata.toolFeedbacks()).build());
+            //直接返回前端，终止本次执行
+            return Optional.of(interruptionMetadata);
         }
         else {
             return InterruptableAction.super.interruptAfter(nodeId, state, actionResult, config);
         }
-        //    // 6. 模拟人工决策（这里选择批准）
-        //    InterruptionMetadata.Builder feedbackBuilder = InterruptionMetadata.builder()
-        //            .nodeId(interruptionMetadata.node())
-        //            .state(interruptionMetadata.state());
-        //
-        //    toolFeedbacks.forEach(toolFeedback -> {
-        //        // 控制台输入，允许用户查看并修改参数
-        //        System.out.println("是否修改参数？当前参数: " + toolFeedback.getArguments());
-        //        System.out.print("请输入新参数（直接回车保持原参数）: ");
-        //        java.util.Scanner scanner = new java.util.Scanner(System.in);
-        //        String userInput = scanner.nextLine().trim();
-        //
-        //        String editedArguments = userInput.isEmpty()
-        //                ? toolFeedback.getArguments()
-        //                : JSON.toJSONString(userInput);
-        //
-        //        InterruptionMetadata.ToolFeedback approvedFeedback =
-        //                InterruptionMetadata.ToolFeedback.builder(toolFeedback)
-        //                        .arguments(editedArguments)
-        //                        .result(InterruptionMetadata.ToolFeedback.FeedbackResult.APPROVED)
-        //                        .build();
-        //        feedbackBuilder.addToolFeedback(approvedFeedback);
-        //    });
-        //
-        //    InterruptionMetadata approvalMetadata = feedbackBuilder.build();
-        //
-        //    // 7. 第二次调用 - 使用人工反馈恢复执行
-        //    System.out.println(" === 第二次调用：使用批准决策恢复 ===");
-        //    RunnableConfig resumeConfig = RunnableConfig.builder()
-        //            .threadId(state.value("sessionId").toString())
-        //            .addMetadata(RunnableConfig.HUMAN_FEEDBACK_METADATA_KEY, approvalMetadata)
-        //            .build();
-        //
-        //    Optional<NodeOutput> finalResult = agent.invokeAndGetOutput("", resumeConfig);
-        //
-        //    if (finalResult.isPresent()) {
-        //        System.out.println("执行完成");
-        //        return CompletableFuture.completedFuture(Map.of(TravelGuideGraphConfig.WEATHER_ANSWER, finalResult));
-        //    }
-        //    return CompletableFuture.completedFuture(Map.of(TravelGuideGraphConfig.WEATHER_ANSWER, Optional.empty()));
-        //}
     }
 }

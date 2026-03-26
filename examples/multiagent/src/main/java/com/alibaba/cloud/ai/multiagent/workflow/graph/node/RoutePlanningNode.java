@@ -90,7 +90,6 @@ public record RoutePlanningNode(ToolCallbackProvider toolCallbackProvider,
                 .threadId(state.value("sessionId").toString() + "_route_planning")
                 .build();
         //stream
-
         try {
             Flux<NodeOutput> stream = agent.stream(state.value(TravelGuideGraphConfig.SEMANTIC_ANSWER).toString(),
                     config);
@@ -98,14 +97,6 @@ public record RoutePlanningNode(ToolCallbackProvider toolCallbackProvider,
         } catch (GraphRunnerException e) {
             throw new RuntimeException(e);
         }
-
-        //try {
-        //    AssistantMessage call = agent.call(state.value(TravelGuideGraphConfig.SEMANTIC_ANSWER).toString(),
-        //            config);
-        //    return CompletableFuture.completedFuture(Map.of(TravelGuideGraphConfig.ROUTE_ANSWER, call));
-        //} catch (GraphRunnerException e) {
-        //    throw new RuntimeException(e);
-        //}
     }
 
     /**
