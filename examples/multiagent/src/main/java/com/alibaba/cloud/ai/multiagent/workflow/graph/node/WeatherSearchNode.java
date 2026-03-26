@@ -134,6 +134,7 @@ implements AsyncNodeAction,
      */
     @Override
     public Optional<InterruptionMetadata> interrupt(String nodeId, OverAllState state, RunnableConfig config) {
+        System.out.println("==============================go into interrupt==============================");
         return Optional.empty();
     }
 
