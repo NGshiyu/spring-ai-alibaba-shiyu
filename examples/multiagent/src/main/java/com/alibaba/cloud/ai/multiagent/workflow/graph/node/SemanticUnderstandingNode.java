@@ -66,7 +66,7 @@ public record SemanticUnderstandingNode(ToolCallbackProvider toolCallbackProvide
                 .dashScopeApi(dashScopeApi)
                 .defaultOptions(DashScopeChatOptions.builder()
                         .model("qwen-plus")
-                        .maxToken(200)           // 核采样参数
+                        .maxToken(2000)           // 核采样参数
                         .build())
                 .build();
         Builder builder = ReactAgent.builder()

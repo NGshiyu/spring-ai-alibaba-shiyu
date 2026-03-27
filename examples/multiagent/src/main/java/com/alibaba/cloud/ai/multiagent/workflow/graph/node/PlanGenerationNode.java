@@ -94,7 +94,7 @@ public record PlanGenerationNode() implements NodeAction {
                 .dashScopeApi(dashScopeApi)
                 .defaultOptions(DashScopeChatOptions.builder()
                         .model("qwen-plus")
-                        .maxToken(200)           // 核采样参数
+                        .maxToken(2000)           // 核采样参数
                         .build())
                 .build();
         //Run React Agent With MCP Tools
@@ -105,7 +105,7 @@ public record PlanGenerationNode() implements NodeAction {
                 .instruction(instruction)
                 .saver((MemorySaver) state.value("memorySaver").get());
         var config = RunnableConfig.builder()
-                .threadId(state.value("sessionId").toString())
+                .threadId(state.value("sessionId").get().toString())
                 .build();
         ReactAgent agent = builder.build();
         Flux<NodeOutput> stream = agent.stream(state.value(TravelGuideGraphConfig.ROUTE_ANSWER).toString(),

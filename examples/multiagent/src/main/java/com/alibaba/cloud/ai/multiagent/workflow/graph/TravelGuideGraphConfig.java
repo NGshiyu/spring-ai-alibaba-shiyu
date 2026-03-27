@@ -57,6 +57,7 @@ public class TravelGuideGraphConfig {
     public static final String ROUTE_ANSWER = "route_planning_answer";
     public static final String PROCUREMENT_ANSWER = "mcdonald_procurement_answer";
     public static final String WEATHER_ANSWER = "weather_search_answer";
+    public static final String WEATHER_ANSWER_SECOND = "weather_search_answer_sec";
     public static final String GENERATION_ANSWER = "plan_generation_answer";
 
     KeyStrategyFactory keyStrategyFactory = () -> {

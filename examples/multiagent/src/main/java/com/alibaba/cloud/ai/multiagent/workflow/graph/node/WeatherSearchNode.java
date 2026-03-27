@@ -52,7 +52,7 @@ import java.util.concurrent.CompletableFuture;
 public record WeatherSearchNode(org.springframework.ai.tool.ToolCallbackProvider toolCallbackProvider,
                                 org.springframework.ai.mcp.client.common.autoconfigure.properties.McpClientCommonProperties mcpClientCommonProperties)
         //implements NodeAction,
-implements AsyncNodeAction,
+        implements AsyncNodeAction,
         InterruptableAction {
     private static final Logger logger = LoggerFactory.getLogger(WeatherSearchNode.class);
     private static final String instruction = """
@@ -60,17 +60,18 @@ implements AsyncNodeAction,
             智能天气助手
             
             # Profile
-            你擅长调用工具获取实时天气数据，并将信息转化为清晰易读的预报计划。
+            你擅长调用工具获取实时天气数据，并将信息转化为清晰易读的预报计划,如果已经提供了准确的地点，直接调用查询即可。
             
             # Rules
             1. **日期逻辑**：若用户提供日期，查询该日天气；若未提供，默认查询最近 7 天预报。
             2. **信息确认**：提取输入中的城市信息，避免干扰，若缺失城市信息，请先追问。
             3. **输出要求**：数据展示结构化（温度、状况），并根据天气适当给出穿衣或出行建议。
             """;
+    static OverAllState stateStatic;
 
     @Override
     public CompletableFuture<Map<String, Object>> apply(OverAllState state) {
-    //public Map<String, Object> apply(OverAllState state) {
+        //public Map<String, Object> apply(OverAllState state) {
         logger.info("WeatherSearchNode execute");
         DashScopeApi dashScopeApi = DashScopeApi.builder()
                 .apiKey(System.getenv("AI_DASHSCOPE_API_KEY"))
@@ -80,7 +81,7 @@ implements AsyncNodeAction,
                 .dashScopeApi(dashScopeApi)
                 .defaultOptions(DashScopeChatOptions.builder()
                         .model("qwen-plus")
-                        .maxToken(200)           // 核采样参数
+                        .maxToken(2000)           // 核采样参数
                         .build())
                 .build();
         //简单的筛选工具避免工具爆炸
@@ -100,65 +101,62 @@ implements AsyncNodeAction,
                 .model(chatModel)
                 .description("Use the tool to search the weather for a given profile")
                 .tools(tools)
-                .hooks(humanInTheLoopHook)
                 .instruction(instruction)
                 .saver((MemorySaver) state.value("memorySaver").get());
 
-        ReactAgent agent = builder.build();
         // 使用独立的 threadId 隔离消息历史，避免不同节点之间的消息污染
         var config = RunnableConfig.builder()
-                .threadId(state.value("sessionId") + "_weather_search")
+                .threadId(state.value("sessionId").get() + "_weather_search")
                 .build();
         try {
-            Optional<NodeOutput> nodeOutput = agent.invokeAndGetOutput(state.value(TravelGuideGraphConfig.SEMANTIC_ANSWER).get().toString(),
-                    config);
-            return CompletableFuture.completedFuture(Map.of(TravelGuideGraphConfig.WEATHER_ANSWER, nodeOutput));
+
+            ReactAgent agent = builder.hooks(humanInTheLoopHook).build();
             //return Map.of(TravelGuideGraphConfig.WEATHER_ANSWER, nodeOutput);
+            if (Boolean.parseBoolean(state.value("isFeedback").get().toString())) {
+
+                // 构建编辑反馈
+                InterruptionMetadata.Builder feedbackBuilder = InterruptionMetadata.builder();
+
+                InterruptionMetadata.ToolFeedback editedFeedback =
+                        InterruptionMetadata.ToolFeedback.builder()
+                                .id(state.value("id").get().toString())
+                                .name(state.value("name").get().toString())
+                                .description(state.value("des").get().toString())
+                                .arguments(state.value("arg").get().toString())
+                                .result(InterruptionMetadata.ToolFeedback.FeedbackResult.EDITED)
+                                .build();
+                feedbackBuilder.addToolFeedback(editedFeedback);
+                InterruptionMetadata editMetadata = feedbackBuilder.build();
+                // 使用编辑决策恢复执行
+                RunnableConfig resumeConfig = RunnableConfig.builder()
+                        .threadId(state.value("sessionId").get() + "_weather_search")
+                        .addMetadata(RunnableConfig.HUMAN_FEEDBACK_METADATA_KEY, editMetadata)
+                        .build();
+
+                Optional<NodeOutput> nodeOutput = agent.invokeAndGetOutput("", resumeConfig);
+                return CompletableFuture.completedFuture(Map.of(TravelGuideGraphConfig.WEATHER_ANSWER, nodeOutput));
+            }
+            else {
+                Optional<NodeOutput> nodeOutput = agent.invokeAndGetOutput(state.value(TravelGuideGraphConfig.SEMANTIC_ANSWER).get().toString(),
+                        config);
+                CompletableFuture<Map<String, Object>> mapCompletableFuture =
+                        CompletableFuture.completedFuture(Map.of(TravelGuideGraphConfig.WEATHER_ANSWER, nodeOutput));
+                return mapCompletableFuture;
+            }
         } catch (GraphRunnerException e) {
             throw new RuntimeException(e);
         }
     }
 
-    /**
-     * Determines whether the graph execution should be interrupted BEFORE the current node executes.
-     * <p>
-     * This method is called before the node action's {@code apply()} method is invoked.
-     *
-     * @param nodeId The identifier of the current node being processed.
-     * @param state  The current state of the agent.
-     * @param config The runnable configuration.
-     *
-     * @return An {@link Optional} containing {@link InterruptionMetadata} if the
-     * execution should be interrupted. Returns an empty {@link Optional} to continue
-     * execution.
-     */
     @Override
     public Optional<InterruptionMetadata> interrupt(String nodeId, OverAllState state, RunnableConfig config) {
         System.out.println("==============================go into interrupt==============================");
         return Optional.empty();
     }
 
-    /**
-     * Determines whether the graph execution should be interrupted AFTER the current node executes.
-     * <p>
-     * This method is called after the node action's {@code apply()} method has completed,
-     * but before the action result is merged into the state. This allows inspection of the
-     * action result to decide whether to interrupt.
-     * <p>
-     * If this method returns an {@link InterruptionMetadata}, the action result will be
-     * merged into the state and a checkpoint will be created before returning the interruption.
-     *
-     * @param nodeId       The identifier of the current node being processed.
-     * @param state        The current state of the agent (before merging action result).
-     * @param actionResult The result returned by the node action's {@code apply()} method.
-     * @param config       The runnable configuration.
-     *
-     * @return An {@link Optional} containing {@link InterruptionMetadata} if the
-     * execution should be interrupted. Returns an empty {@link Optional} to continue
-     * execution. Default implementation returns empty (no interruption).
-     */
     @Override
     public Optional<InterruptionMetadata> interruptAfter(String nodeId, OverAllState state, Map<String, Object> actionResult, RunnableConfig config) {
+        this.stateStatic = state;
         Optional<NodeOutput> nodeOutput = (Optional<NodeOutput>) actionResult.get(TravelGuideGraphConfig.WEATHER_ANSWER);
         if (nodeOutput.isPresent() && nodeOutput.get() instanceof InterruptionMetadata interruptionMetadata) {
             //直接返回前端，终止本次执行

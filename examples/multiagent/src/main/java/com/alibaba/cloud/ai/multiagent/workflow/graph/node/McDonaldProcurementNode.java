@@ -149,7 +149,7 @@ public record McDonaldProcurementNode(org.springframework.ai.chat.model.ChatMode
         //.saver((MemorySaver) state.value("memorySaver").get());
         ReactAgent agent = builder.build();
         var config = RunnableConfig.builder()
-                .threadId(state.value("sessionId").toString())
+                .threadId(state.value("sessionId").get().toString())
                 .build();
         //stream
         Optional<NodeOutput> result = Optional.empty();

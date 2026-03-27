@@ -72,7 +72,7 @@ public record RoutePlanningNode(ToolCallbackProvider toolCallbackProvider,
                 .dashScopeApi(dashScopeApi)
                 .defaultOptions(DashScopeChatOptions.builder()
                         .model("qwen-plus")
-                        .maxToken(200)           // 核采样参数
+                        .maxToken(2000)           // 核采样参数
                         .build())
                 .build();
         //Run React Agent With MCP Tools
@@ -87,7 +87,7 @@ public record RoutePlanningNode(ToolCallbackProvider toolCallbackProvider,
         ReactAgent agent = builder.build();
         // 使用独立的 threadId 隔离消息历史，避免不同节点之间的消息污染
         var config = RunnableConfig.builder()
-                .threadId(state.value("sessionId").toString() + "_route_planning")
+                .threadId(state.value("sessionId").get() + "_route_planning")
                 .build();
         //stream
         try {
