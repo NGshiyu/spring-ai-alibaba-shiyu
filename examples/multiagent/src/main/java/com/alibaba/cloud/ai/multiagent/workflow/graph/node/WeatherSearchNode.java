@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
+import reactor.core.publisher.Flux;
 
 import java.util.Arrays;
 import java.util.List;
@@ -132,12 +133,14 @@ public record WeatherSearchNode(org.springframework.ai.tool.ToolCallbackProvider
                         .threadId(state.value("sessionId").get() + "_weather_search")
                         .addMetadata(RunnableConfig.HUMAN_FEEDBACK_METADATA_KEY, editMetadata)
                         .build();
-
-                Optional<NodeOutput> nodeOutput = agent.invokeAndGetOutput("", resumeConfig);
+                Flux<NodeOutput> nodeOutput = agent.stream("", resumeConfig);
+                //Optional<NodeOutput> nodeOutput = agent.invokeAndGetOutput("", resumeConfig);
+                //List<Message> messages = (List<Message>) nodeOutput.get().state().data().get("messages");
+                //Message message = messages.get(messages.size() - 1);
                 return CompletableFuture.completedFuture(Map.of(TravelGuideGraphConfig.WEATHER_ANSWER, nodeOutput));
             }
             else {
-                Optional<NodeOutput> nodeOutput = agent.invokeAndGetOutput(state.value(TravelGuideGraphConfig.SEMANTIC_ANSWER).get().toString(),
+                Flux<NodeOutput> nodeOutput = agent.stream(state.value(TravelGuideGraphConfig.SEMANTIC_ANSWER).get().toString(),
                         config);
                 CompletableFuture<Map<String, Object>> mapCompletableFuture =
                         CompletableFuture.completedFuture(Map.of(TravelGuideGraphConfig.WEATHER_ANSWER, nodeOutput));
@@ -157,13 +160,16 @@ public record WeatherSearchNode(org.springframework.ai.tool.ToolCallbackProvider
     @Override
     public Optional<InterruptionMetadata> interruptAfter(String nodeId, OverAllState state, Map<String, Object> actionResult, RunnableConfig config) {
         this.stateStatic = state;
-        Optional<NodeOutput> nodeOutput = (Optional<NodeOutput>) actionResult.get(TravelGuideGraphConfig.WEATHER_ANSWER);
-        if (nodeOutput.isPresent() && nodeOutput.get() instanceof InterruptionMetadata interruptionMetadata) {
-            //直接返回前端，终止本次执行
-            return Optional.of(interruptionMetadata);
+        Object nodeOutput = actionResult.get(TravelGuideGraphConfig.WEATHER_ANSWER);
+        if(nodeOutput instanceof Optional<?> output) {
+            if (output.isPresent() && output.get() instanceof InterruptionMetadata interruptionMetadata) {
+                //直接返回前端，终止本次执行
+                return Optional.of(interruptionMetadata);
+            }
+            else {
+                return InterruptableAction.super.interruptAfter(nodeId, state, actionResult, config);
+            }
         }
-        else {
-            return InterruptableAction.super.interruptAfter(nodeId, state, actionResult, config);
-        }
+        return InterruptableAction.super.interruptAfter(nodeId, state, actionResult, config);
     }
 }
