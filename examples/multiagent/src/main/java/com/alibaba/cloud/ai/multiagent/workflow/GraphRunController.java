@@ -140,9 +140,7 @@ public class GraphRunController {
                 .build();
 
         Map<String, Object> initialState = new HashMap<>();
-        initialState.put("question", """
-                杭州今天天气怎么样，我需要穿什么衣服？
-                """);
+        initialState.put("question", isFeedback.get("question").toString());
         initialState.put("sessionId", sessionId);
         initialState.put("memorySaver", memorySaver);
         initialState.put("isFeedback", isFeedback.get("isFeedback"));

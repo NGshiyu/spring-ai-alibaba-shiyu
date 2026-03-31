@@ -133,7 +133,7 @@ public record WeatherSearchNode(org.springframework.ai.tool.ToolCallbackProvider
                         .threadId(state.value("sessionId").get() + "_weather_search")
                         .addMetadata(RunnableConfig.HUMAN_FEEDBACK_METADATA_KEY, editMetadata)
                         .build();
-                Flux<NodeOutput> nodeOutput = agent.stream("", resumeConfig);
+                Flux<NodeOutput> nodeOutput = agent.stream(state.value("question").get().toString(), resumeConfig);
                 //Optional<NodeOutput> nodeOutput = agent.invokeAndGetOutput("", resumeConfig);
                 //List<Message> messages = (List<Message>) nodeOutput.get().state().data().get("messages");
                 //Message message = messages.get(messages.size() - 1);
