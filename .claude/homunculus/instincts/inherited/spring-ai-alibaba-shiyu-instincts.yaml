@@ -1,0 +1,359 @@
+# Instincts generated from https://github.com/NGshiyu/spring-ai-alibaba-shiyu
+# Generated: 2026-05-08T16:22:03.367Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: spring-ai-alibaba-shiyu-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: fix, feat
+
+## Evidence
+
+- 3 commits analyzed
+- Detected conventional commit pattern
+- Examples: feat(agent): add streaming model interceptor for per-chunk LLM output (#4605), fix(graph): resolve null message in StreamingOutput for HITL partial … (#4596)
+
+---
+id: spring-ai-alibaba-shiyu-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Commit Length
+
+## Action
+
+Write moderate-length commit messages (~73 characters)
+
+## Evidence
+
+- Average commit message length: 73 chars
+- Based on 3 commits
+
+---
+id: spring-ai-alibaba-shiyu-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Naming Files
+
+## Action
+
+Use PascalCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: PascalCase
+
+---
+id: spring-ai-alibaba-shiyu-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: spring-ai-alibaba-shiyu-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: spring-ai-alibaba-shiyu-test-naming
+trigger: "when creating a test file"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Test Naming
+
+## Action
+
+Name test files using the pattern: *.test.ts
+
+## Evidence
+
+- File pattern: *.test.ts
+- Consistent across test files
+
+---
+id: spring-ai-alibaba-shiyu-instinct-class-naming
+trigger: "When creating a new Java class"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Instinct Class Naming
+
+## Action
+
+Name the class using PascalCase
+
+## Evidence
+
+- Naming convention: classes use PascalCase
+
+---
+id: spring-ai-alibaba-shiyu-instinct-function-naming
+trigger: "When defining a function or method in Java"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Instinct Function Naming
+
+## Action
+
+Name the function using camelCase
+
+## Evidence
+
+- Naming convention: functions use camelCase
+
+---
+id: spring-ai-alibaba-shiyu-instinct-constant-naming
+trigger: "When declaring a constant in Java"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Instinct Constant Naming
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE
+
+## Evidence
+
+- Naming convention: constants use SCREAMING_SNAKE_CASE
+
+---
+id: spring-ai-alibaba-shiyu-instinct-file-naming
+trigger: "When creating a new Java file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Instinct File Naming
+
+## Action
+
+Name the file using PascalCase
+
+## Evidence
+
+- Naming convention: files use PascalCase
+
+---
+id: spring-ai-alibaba-shiyu-instinct-import-style
+trigger: "When importing modules in Java"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Instinct Import Style
+
+## Action
+
+Use relative import paths
+
+## Evidence
+
+- Import style: relative
+
+---
+id: spring-ai-alibaba-shiyu-instinct-export-style
+trigger: "When exporting modules or classes in Java"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Instinct Export Style
+
+## Action
+
+Use named exports
+
+## Evidence
+
+- Export style: named
+
+---
+id: spring-ai-alibaba-shiyu-instinct-commit-prefix
+trigger: "When writing a git commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Instinct Commit Prefix
+
+## Action
+
+Start the commit message with a conventional prefix such as 'fix' or 'feat'
+
+## Evidence
+
+- feat(agent): add streaming model interceptor for per-chunk LLM output (#4605)
+- fix(graph): resolve null message in StreamingOutput for HITL partial … (#4596)
+- fix: support copying lib jars from jar protocol resources (#4587)
+
+---
+id: spring-ai-alibaba-shiyu-instinct-commit-format
+trigger: "When writing a git commit message"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Instinct Commit Format
+
+## Action
+
+Follow the format: <type>(<scope>): <description> (#<issue>)
+
+## Evidence
+
+- feat(agent): add streaming model interceptor for per-chunk LLM output (#4605)
+- fix(graph): resolve null message in StreamingOutput for HITL partial … (#4596)
+
+---
+id: spring-ai-alibaba-shiyu-instinct-commit-length
+trigger: "When writing a git commit message"
+confidence: 0.8
+domain: git
+source: repo-analysis
+source_repo: NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Instinct Commit Length
+
+## Action
+
+Write a concise message around 70-80 characters
+
+## Evidence
+
+- Average commit length: 73
+- Examples provided
+
+---
+id: spring-ai-alibaba-shiyu-instinct-test-file-naming
+trigger: "When creating a test file"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Instinct Test File Naming
+
+## Action
+
+Name the test file with the pattern '*.test.ts'
+
+## Evidence
+
+- Test file pattern: *.test.ts
+
+---
+id: spring-ai-alibaba-shiyu-instinct-test-type
+trigger: "When writing tests"
+confidence: 0.7
+domain: testing
+source: repo-analysis
+source_repo: NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Instinct Test Type
+
+## Action
+
+Focus on unit tests
+
+## Evidence
+
+- Test types: unit
+
+---
+id: spring-ai-alibaba-shiyu-instinct-test-coverage-config
+trigger: "When configuring test coverage"
+confidence: 0.6
+domain: testing
+source: repo-analysis
+source_repo: NGshiyu/spring-ai-alibaba-shiyu
+---
+
+# Spring Ai Alibaba Shiyu Instinct Test Coverage Config
+
+## Action
+
+Do not add a coverage configuration file
+
+## Evidence
+
+- coverageConfig: false
+
